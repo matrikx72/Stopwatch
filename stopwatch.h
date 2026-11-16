@@ -5,6 +5,12 @@
 #include <QElapsedTimer>
 #include <QTimer>
 
+// Структура для хранения данных круга
+struct LapData {
+    int number;
+    double time;
+};
+
 class Stopwatch : public QObject
 {
     Q_OBJECT
@@ -14,12 +20,15 @@ public:
     void start();
     void stop();
     void reset();
-    void lap();
+
+    // Теперь метод возвращает структуру, а не испускает сигнал
+    LapData lap();
+
     bool isRunning() const;
 
 signals:
     void timeUpdated(double seconds);
-    void lapRecorded(int lapNumber, double lapTime);
+    // Сигнал lapRecorded УДАЛЕН
 
 private slots:
     void onTimerTick();
@@ -28,7 +37,7 @@ private:
     QTimer *m_timer;
     QElapsedTimer m_elapsed;
     qint64 m_lastLapTime;
-    qint64 m_accumulatedTime; // <-- НОВОЕ: время, накопленное до паузы (в мс)
+    qint64 m_accumulatedTime;
     int m_lapCount;
     bool m_isRunning;
 };

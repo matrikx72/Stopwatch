@@ -9,13 +9,13 @@ Stopwatch::Stopwatch(QObject *parent) : QObject(parent)
     m_isRunning = false;
     m_lapCount = 0;
     m_lastLapTime = 0;
-    m_accumulatedTime = 0; // Инициализируем
+    m_accumulatedTime = 0;
 }
 
 void Stopwatch::start()
 {
     if (!m_isRunning) {
-        m_elapsed.start(); // Запускаем отсчет текущего отрезка
+        m_elapsed.start();
         m_timer->start();
         m_isRunning = true;
     }
@@ -25,7 +25,6 @@ void Stopwatch::stop()
 {
     if (m_isRunning) {
         m_timer->stop();
-        // Сохраняем время, которое прошло с момента старта
         m_accumulatedTime += m_elapsed.elapsed();
         m_isRunning = false;
     }
@@ -33,27 +32,34 @@ void Stopwatch::stop()
 
 void Stopwatch::reset()
 {
-    stop(); // Останавливаем, если шло
-    m_accumulatedTime = 0; // Обнуляем накопленное
+    // Если секундомер работает, перезапускаем таймер с нуля, но НЕ останавливаем
+    if (m_isRunning) {
+        m_elapsed.start();
+    }
+
+    m_accumulatedTime = 0;
     m_lapCount = 0;
     m_lastLapTime = 0;
+
     emit timeUpdated(0.0);
 }
 
-void Stopwatch::lap()
+LapData Stopwatch::lap()
 {
-    if (!m_isRunning) return;
+    LapData result = {0, 0.0};
 
-    // Общее прошедшее время = накопленное + текущее
+    if (!m_isRunning) return result;
+
     qint64 totalCurrentTime = m_accumulatedTime + m_elapsed.elapsed();
-
-    // Время круга = общее время - время предыдущего круга
     double lapTime = (totalCurrentTime - m_lastLapTime) / 1000.0;
 
     m_lastLapTime = totalCurrentTime;
     m_lapCount++;
 
-    emit lapRecorded(m_lapCount, lapTime);
+    result.number = m_lapCount;
+    result.time = lapTime;
+
+    return result;
 }
 
 bool Stopwatch::isRunning() const
@@ -63,7 +69,6 @@ bool Stopwatch::isRunning() const
 
 void Stopwatch::onTimerTick()
 {
-    // Отправляем общее время: накопленное + текущее
     double totalSeconds = (m_accumulatedTime + m_elapsed.elapsed()) / 1000.0;
     emit timeUpdated(totalSeconds);
 }

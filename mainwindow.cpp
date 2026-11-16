@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Подключаем сигналы от секундомера к слотам интерфейса (требование критериев)
     connect(m_stopwatch, &Stopwatch::timeUpdated, this, &MainWindow::updateTime);
-    connect(m_stopwatch, &Stopwatch::lapRecorded, this, &MainWindow::recordLap);
+
 
     // Подключаем кнопки
     connect(ui->startStopButton, &QPushButton::clicked, this, &MainWindow::onStartStopClicked);
@@ -75,13 +75,31 @@ void MainWindow::onClearClicked()
 {
     m_stopwatch->reset();
     ui->lapTableWidget->setRowCount(0);
-    ui->startStopButton->setText("Старт"); // Возвращаем текст кнопки
-    ui->lapButton->setEnabled(false);
+    if (!m_stopwatch->isRunning()) {
+           ui->startStopButton->setText("Старт");
+           ui->lapButton->setEnabled(false);
+       }
 }
 
 void MainWindow::onLapClicked()
 {
-    m_stopwatch->lap();
+    LapData lapInfo = m_stopwatch->lap();
+
+       if (lapInfo.number > 0) {
+           int row = ui->lapTableWidget->rowCount();
+           ui->lapTableWidget->insertRow(row);
+
+           QTableWidgetItem *itemLap = new QTableWidgetItem(QString::number(lapInfo.number));
+           QTableWidgetItem *itemTime = new QTableWidgetItem(QString::number(lapInfo.time, 'f', 1) + " сек");
+
+           itemLap->setTextAlignment(Qt::AlignCenter);
+           itemTime->setTextAlignment(Qt::AlignCenter);
+
+           ui->lapTableWidget->setItem(row, 0, itemLap);
+           ui->lapTableWidget->setItem(row, 1, itemTime);
+
+           ui->lapTableWidget->scrollToBottom();
+       }
 }
 
 void MainWindow::updateTime(double seconds)
